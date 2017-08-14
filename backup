@@ -1,0 +1,189 @@
+Linux VPS免插件备份并恢复WordPress网站
+
+分类 WordPress 最新文章 标签 wordpress 备份
+在VPS环境下，我们备份WordPress不再需要借助插件。WordPress网站的备份包括两个部分：数据库备份和文件备份。
+
+如何备份WordPress数据库
+
+一般的Linux VPS使用的是MySQL数据库服务器，不过现在也有很多网站使用MariaDB数据库服务器。MariaDB是MySQL的分支，MariaDB的命令与MySQL的命令基本一致。下面的备份命令适用于MySQL和MariaDB。
+
+SSH登录Linux VPS，然后输入下面的命令进入MySQL Shell。-u代表userid，-p代表password。
+
+mysql -u root -p
+输入MySQL root密码后，我们就进入了MySQL Shell。输入下面的SQL语句列出所有的数据库：
+
+show databases;
+下面是我的输出结果：
+
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| wpfun              |
++--------------------+
+可以看到一共有4个数据库，其中有一个是WordPress使用的数据库。输入下面的SQL语句退出MySQL Shell。
+
+exit;
+然后在Linux Shell中输入下面的命令备份所有数据库，包括WordPress所使用的数据库。
+
+mysqldump --all-databases --user=root --password --master-data > backup.sql
+这条命令使用mysqldump这个工具将全部数据库备份到一个backup.sql文件中，你也可以指定成其他文件名，如wordpress.sql。如果出现下面的错误
+
+mysqldump: Error: Binlogging on server not active
+那么编辑/etc/mysql/my.cnf文件
+
+sudo vi /etc/mysql/my.cnf  //  ubuntu 14.04
+
+sudo vi /etc/mysql/mysql.conf.d/mysqld.cnf  //ubuntu  16.04
+
+添加下面一行到[mysqld]这一部分
+
+log-bin=mysql-bin
+如下
+
+[mysqld]
+ #
+ # * Basic Settings
+ #
+ user = mysql
+ pid-file = /var/run/mysqld/mysqld.pid
+ socket = /var/run/mysqld/mysqld.sock
+ port = 3306
+ basedir = /usr
+ datadir = /var/lib/mysql
+ tmpdir = /tmp
+ lc-messages-dir = /usr/share/mysql
+ skip-external-locking
+ log-bin=mysql-bin
+ #
+然后重启mysql数据库服务器，再执行上面的mysqldump命令
+
+sudo systemctl restart mysql 或 sudo service mysql restart
+mysqldump --all-databases --user=root --password --master-data > backup.sql
+如何备份WordPress文件
+
+备份WordPress文件，也就是要备份网站根目录下的所有文件。WordPress程序、主题、插件、上传的图片等WordPress网站文件都在网站根目录下，通常Linux VPS网站根目录为/var/www/html。
+
+我们可以使用tar命令来打包/var/www/html目录下的所有文件。输入下面的命令：
+
+tar -cpzf filename.tar.gz /var/www/html/
+你可以将filename指定成任何文件名。
+
+
+知道如何备份不够，我们还需要了解如何恢复WordPress网站。
+
+如何恢复WordPress数据库
+
+输入下面的命令导入备份好的数据库
+
+mysql -u root -p < backup.sql
+这条命令将之前全部备份好的数据库文件backup.sql的内容恢复到了MySQL数据库服务器中。
+
+如何恢复WordPress文件
+
+首先解压之前打包好的备份文件：
+
+tar -xvf filename.tar.gz
+然后将解压好的文件复制到网站根目录下：
+
+sudo cp var/www/html/* /var/www/html/ -R
+这样WordPress网站就全部恢复好了。
+
+将备份文件发送到自己的邮箱
+
+如果你觉得备份在服务器上不保险的话，可以把备份的数据库和文件以附件的形式发送到自己的邮箱。我们可以使用heirloom-mailx这个命令行邮件客户端来发送邮件，安装heirloom-mailx的命令：
+
+Debian/Ubuntu
+
+sudo apt-get install heirloom-mailx
+RHEL/CentOS
+
+sudo yum install mailx  或 sudo dnf install mailx
+然后输入下面的命令将备份数据库和文件发送到自己的邮箱
+
+echo “Hooray! You have successfully backed up your wordpress database and files.” | mail -a backup.sql -a filename.tar.gz -s “***database and files backed up***” -r “your-name<your-email-address>”
+你可以设置一个cron任务，每天定时备份数据库和文件。
+
+参考网址  https://www.linuxdashen.com/linux-vps%E5%85%8D%E6%8F%92%E4%BB%B6%E5%A4%87%E4%BB%BD%E5%B9%B6%E6%81%A2%E5%A4%8Dwordpress%E7%BD%91%E7%AB%99
+
+https://blog.coderstory.cn/2017/02/14/backupandrestorewp/
+
+备份数据库： 
+
+sudo vi /etc/mysql/my.cnf  //  ubuntu 14.04
+
+sudo vi /etc/mysql/mysql.conf.d/mysqld.cnf  //ubuntu  16.04
+
+添加下面一行到[mysqld]这一部分
+
+2. log-bin=mysql-bin
+
+如下
+
+[mysqld]
+ #
+ # * Basic Settings
+ #
+ user = mysql
+ pid-file = /var/run/mysqld/mysqld.pid
+ socket = /var/run/mysqld/mysqld.sock
+ port = 3306
+ basedir = /usr
+ datadir = /var/lib/mysql
+ tmpdir = /tmp
+ lc-messages-dir = /usr/share/mysql
+ skip-external-locking
+ log-bin=mysql-bin    。。。。。。。。。。。
+ #
+
+然后重启mysql数据库服务器，再执行上面的mysqldump命令
+
+3. sudo systemctl restart mysql 或 sudo service mysql restart
+
+4. mysqldump --all-databases --user=root --password --master-data > backup.sql
+
+--------------------------------------------------------------
+
+备份WordPress文件： 
+
+1. 备份WordPress文件，也就是要备份网站根目录下的所有文件。WordPress程序、主题、插件、上传的
+图片等WordPress网站文件都在网站根目录下，通常Linux VPS网站根目录为/var/www/html。
+
+我们可以使用tar命令来打包/var/www/html目录下的所有文件。输入下面的命令：
+
+tar -cpzf filename.tar.gz /var/www/html/
+
+tar: /var/www/html/.swp:Canot open:Permission denied
+
+你可以将filename指定成任何文件名。
+
+
+///如何恢复WordPress数据库
+
+2. 输入下面的命令导入备份好的数据库
+
+恢复数据库
+
+wp是数据库名 back.sql是备份的sql文件
+
+mysql -uroot -p ;
+create database wp;
+use wp;
+source backup.sql
+
+这条命令将之前全部备份好的数据库文件backup.sql的内容恢复到了MySQL数据库服务器中。
+
+3. 如何恢复WordPress文件
+
+首先解压之前打包好的备份文件：
+
+tar -xvf filename.tar.gz
+
+
+然后将解压好的文件复制到网站根目录下：
+
+sudo cp var/www/html/* /var/www/html/ -R
+
+这样WordPress网站就全部恢复好了。
