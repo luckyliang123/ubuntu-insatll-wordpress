@@ -1,0 +1,28 @@
+sudo apt-get install vsftpd
+sudo chmod -R 777 /var/www/html
+sudo vi /etc/vsftpd.conf
+Listen =YES
+Anonymous_enable=NO
+local_enable=YES
+local_root=/var/www/html
+Write_enable=YES
+allow_writeable_chroot=YES
+Local_umask=022
+Chroot_list_enable=YES
+Chroot_list_file=/etc/vsftpd.chroot_list
+Pam_service_name=ftp
+
+sudo touch /etc/vsftpd.chroot_list
+sudo vi /etc/vsftpd.chroot_list
+User1
+User2
+User3
+....
+
+///////////
+
+sudo useradd -d /var/www/html -m user1/user2/user3
+sudo passwd user1/user2/user3
+******
+*****
+sudo service vsftpd restart
