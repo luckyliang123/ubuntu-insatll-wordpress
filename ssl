@@ -1,0 +1,91 @@
+亚马孙：
+ 
+ubuntu 登录后
+
+切换root 权限
+
+重置密码： sudo passwd root
+
+然后root登录 ，su root
+
+输入密码就可以 
+
+二：ubuntu配置ssl
+
+腾讯云申请免费的SSL 
+域名解析那里设置腾讯云申请下来的记录号 
+下载腾讯云申请下来的证书 
+在ubuntu14.04上配置SSL证书 
+
+1.sudo a2enmod ssl 
+
+2.sudo service apache2 restart 
+
+3.sudo chmod 777 /etc/ssl 
+
+4.使用filezilla将下载的SSL证书上传到服务器文件夹/etc/ssl下面 
+
+5.cd /etc/ssl 
+
+6.sudo cp 1_root_bundle.crt certs 两个文件
+
+  sudo cp 2_www.lydiaqueen.com.crt certs 
+
+7.sudo chmod 777 private 
+
+8.sudo cp 3_www.lydiaqueen.com.key private 
+
+9.sudo chmod 710 private 
+
+10.sudo vim /etc/apache2/sites-enabled/000-default.conf 
+
+（
+ServerName www.acecashmere.com
+
+SSLEngine on 
+
+SSLCertificateChainFile   /etc/ssl/1_root_bundle.crt
+
+SSLCertificateFile        /etc/ssl/certs/2_www.lydiaqueen.com.crt
+
+SSLCertificateKeyFile     /etc/ssl/private/3_www.lydiaqueen.com.key
+）
+
+编辑后放到里面的
+
+11.sudo /etc/init.d/apache2 force-reload 
+
+12.sudo /etc/init.d/apache2 restart 
+
+13.腾讯云添加安全组443端口 
+
+14.访问网站https://域名出现ssl连接错误 
+
+15.sudo vim /etc/apache2/sites-enabled/000-default.conf   
+
+还要把 80端口改为443 
+
+ 16  systemctl daemon-reload 
+
+17. service apache2 restart   完成
+
+//  sudo chmod 777 /etc/apache2/apache2.conf 
+
+可以访问https了
+
+
+网站https跳转：
+
+sudo vim /etc/apache2/sites-enabled/000-default.conf 
+
+添加下面这个：
+
+<VirtualHost *:80>
+
+RewriteEngine on
+RewriteCond   %{HTTPS} !=on
+RewriteRule   ^(.*)  https://%{SERVER_NAME}$1 [L,R]
+
+</VirtualHost>
+
+重启：sudo service apache2 restart
